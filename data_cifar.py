@@ -15,7 +15,7 @@ def download_data():
     """Downloading data from URL.
     Need to rezip manually.
     """
-    print('Downloading {:s}...'.format(filename))
+    print('Downloading cifar-10 data...'
     request.urlretrieve(dataurl)
     print('Done')
     print('Please unzip files. command is:')
