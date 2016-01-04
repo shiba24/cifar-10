@@ -1,5 +1,4 @@
 *.gz
 *.tar
 *.pkl
-*.pyc
 cifar-10-batches-py/*
