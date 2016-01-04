@@ -21,6 +21,7 @@ def download_data():
     print('Please unzip files. command is:')
     print('gzip -d cifar-10-python.tar.gz')
     print('tar -xf cifar-10-python.tar')
+    exit()
 
 
 def read(fname):
@@ -87,6 +88,8 @@ def set_batch_data():
     """Set data for either one training or test at one time.
     For less memory consumption.
     """
+    if not os.path.exists(filepath):
+        download_data()
     for n in range(0,6):
         d = read(filepath + flist[n])
         metadata = read(filepath + flist[-1])
@@ -139,7 +142,6 @@ if __name__ == "__main__":
 
 """
 MEMO
-
 {'num_cases_per_batch': 10000,
 'label_names':
 ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck'],
