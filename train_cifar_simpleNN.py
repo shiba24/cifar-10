@@ -20,11 +20,12 @@ from chainer import serializers
 import logging
 import time
 import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 import data_cifar
 import net
+
+matplotlib.use('Agg')
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
@@ -144,23 +145,25 @@ if args.logflag == 'on':
                         level=logging.DEBUG,
                         format='%(asctime)s %(message)s'
                         )
-    logging.info('New trial **************************************************\n'
-                'All data: %d frames, train: %d frames / test: %d frames.\n'
-                '   Inputs = %d, Units= %d, Outputs = %d, Batchsize = %d.\n'
-                '   Network = %s'
-                '   Total Time = %.3f\n'
-                '   Epoch: 1,  train mean loss=  %.5f, accuracy=  %.5f\n'
-                '              test mean loss=  %.5f, accuracy=  %.5f\n'
-                '   Epoch: %d, train mean loss=  %.5f, accuracy=  %.5f\n'
-                '              test mean loss=  %.3f, accuracy=  %.3f\n',
-                 N + N_test, N, N_test,
-                 n_inputs, n_units, n_outputs, batchsize,  
-                 args.net,
-                 etime-stime,
-                 train_mean_loss[0], train_ac[0],
-                 test_mean_loss[0], test_ac[0],
-                 epoch, train_mean_loss[-1], train_ac[-1],
-                 test_mean_loss[-1], test_ac[-1])
+    logging.info(
+        'New trial **************************************************\n'
+        'All data: %d frames, train: %d frames / test: %d frames.\n'
+        '   Inputs = %d, Units= %d, Outputs = %d, Batchsize = %d.\n'
+        '   Network = %s'
+        '   Total Time = %.3f\n'
+        '   Epoch: 1,  train mean loss=  %.5f, accuracy=  %.5f\n'
+        '              test mean loss=  %.5f, accuracy=  %.5f\n'
+        '   Epoch: %d, train mean loss=  %.5f, accuracy=  %.5f\n'
+        '              test mean loss=  %.3f, accuracy=  %.3f\n',
+        N + N_test, N, N_test,
+        n_inputs, n_units, n_outputs, batchsize,
+        args.net,
+        etime-stime,
+        train_mean_loss[0], train_ac[0],
+        test_mean_loss[0], test_ac[0],
+        epoch, train_mean_loss[-1], train_ac[-1],
+        test_mean_loss[-1], test_ac[-1]
+        )
     f = open(LOG_FILENAME, 'rt')
     try:
         body = f.read()
