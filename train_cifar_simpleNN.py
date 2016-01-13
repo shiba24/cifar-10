@@ -38,7 +38,8 @@ print('load cifar-10 dataset')
 cifar = data_cifar.load_data()
 cifar['train']['x'] = cifar['train']['x'].astype(np.float32)
 cifar['test']['x'] = cifar['test']['x'].astype(np.float32)
-# cifar['data'] /= 255
+cifar['train']['x'] /= 255
+cifar['test']['x'] /= 255
 cifar['train']['y'] = np.array(cifar['train']['y'], dtype=np.int32)
 cifar['test']['y'] = np.array(cifar['test']['y'], dtype=np.int32)
 
