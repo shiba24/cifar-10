@@ -150,7 +150,7 @@ if args.logflag == 'on':
         'All data: %d frames, train: %d frames / test: %d frames.\n'
         '   Inputs = %d, Units= %d, Outputs = %d, Batchsize = %d.\n'
         '   Network = %s'
-        '   Total Time = %.3f\n'
+        '   Total Time = %.3f sec.\n'
         '   Epoch: 1,  train mean loss=  %.5f, accuracy=  %.5f\n'
         '              test mean loss=  %.5f, accuracy=  %.5f\n'
         '   Epoch: %d, train mean loss=  %.5f, accuracy=  %.5f\n'
