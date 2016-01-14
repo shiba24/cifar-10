@@ -85,8 +85,8 @@ assert N % batchsize == 0
 assert N_test % batchsize == 0
 
 # Prepare model
-import alex
-model = alex.Alex()
+import alex_cifar
+model = alex_cifar.Alex()
 
 if args.gpu >= 0:
     cuda.get_device(args.gpu).use()
