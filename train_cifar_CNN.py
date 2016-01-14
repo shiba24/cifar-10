@@ -16,13 +16,13 @@ from PIL import Image
 import six.moves.cPickle as pickle
 from six.moves import queue
 
-
 """
+
 from __future__ import print_function
-import argparse
 
 import numpy as np
 import six
+import argparse
 
 import chainer
 from chainer import computational_graph
@@ -33,12 +33,11 @@ from chainer import serializers
 
 import logging
 import time
-import matplotlib
-from matplotlib import pyplot as plt
+#import matplotlib
+#from matplotlib import pyplot as plt
 
 import data_cifar
-import net
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
@@ -59,42 +58,9 @@ parser.add_argument('--saveflag', '-s', choices=('on', 'off'),
                     default='off', help='Save model and optimizer flag')
 args = parser.parse_args()
 
-"""
-parser = argparse.ArgumentParser(
-    description='Learning convnet from ILSVRC2012 dataset')
-parser.add_argument('train', help='Path to training image-label list file')
-parser.add_argument('val', help='Path to validation image-label list file')
-parser.add_argument('--mean', '-m', default='mean.npy',
-                    help='Path to the mean file (computed by compute_mean.py)')
-parser.add_argument('--arch', '-a', default='nin',
-                    help='Convnet architecture \
-                    (nin, alex, alexbn, googlenet, googlenetbn)')
-parser.add_argument('--batchsize', '-B', type=int, default=32,
-                    help='Learning minibatch size')
-parser.add_argument('--val_batchsize', '-b', type=int, default=250,
-                    help='Validation minibatch size')
-parser.add_argument('--epoch', '-E', default=10, type=int,
-                    help='Number of epochs to learn')
-parser.add_argument('--gpu', '-g', default=-1, type=int,
-                    help='GPU ID (negative value indicates CPU)')
-parser.add_argument('--loaderjob', '-j', default=20, type=int,
-                    help='Number of parallel data loading processes')
-parser.add_argument('--root', '-r', default='.',
-                    help='Root directory path of image files')
-parser.add_argument('--out', '-o', default='model',
-                    help='Path to save model on each validation')
-parser.add_argument('--outstate', '-s', default='state',
-                    help='Path to save optimizer state on each validation')
-parser.add_argument('--initmodel', default='',
-                    help='Initialize the model from given file')
-parser.add_argument('--resume', default='',
-                    help='Resume the optimization from snapshot')
-args = parser.parse_args()
 if args.gpu >= 0:
     cuda.check_cuda_available()
 xp = cuda.cupy if args.gpu >= 0 else np
-
-"""
 
 
 # Prepare dataset
@@ -112,72 +78,20 @@ N = cifar['ntraindata']
 N_test = cifar['ntestdata']
 
 n_inputs = cifar['ndim']
-n_units = 5000
-n_outputs = len(cifar['labels'])
 batchsize = 100
-n_epoch = 20
+n_epoch = 5
 
-
-
-"""
-MEMO
-
-read x and make batch,
-
-x_batch = np.ndarray(
-    (batchsize, 3 colors, insize(<=32), insize), dtype=np.float32)
-y_batch = np.ndarray((batchsize,), dtype=np.int32)
-
-
-val_x_batch = np.ndarray(
-    (batchsize, 3 colors, insize, insize), dtype=np.float32)
-val_y_batch = np.ndarray((args.val_batchsize,), dtype=np.int32)
-
-
-return_x_batch(x,batchsize,insize):
-	x_batch = np.ndarray((batchsize, 3, insize, insize), dtype=np.float32)
-	
-
-cifar['train']['x']
-
-"""
-
-assert 50000 % args.val_batchsize == 0
-
-def load_image_list(path, root):
-    tuples = []
-    for line in open(path):
-        pair = line.strip().split()
-        tuples.append((os.path.join(root, pair[0]), np.int32(pair[1])))
-    return tuples
-
-# Prepare dataset
-train_list = load_image_list(args.train, args.root)
-val_list = load_image_list(args.val, args.root)
-mean_image = pickle.load(open(args.mean, 'rb'))
+assert N % batchsize == 0
+assert N_test % batchsize == 0
 
 # Prepare model
-if args.arch == 'nin':
-    import nin
-    model = nin.NIN()
-elif args.arch == 'alex':
-    import alex
-    model = alex.Alex()
-elif args.arch == 'alexbn':
-    import alexbn
-    model = alexbn.AlexBN()
-elif args.arch == 'googlenet':
-    import googlenet
-    model = googlenet.GoogLeNet()
-elif args.arch == 'googlenetbn':
-    import googlenetbn
-    model = googlenetbn.GoogLeNetBN()
-else:
-    raise ValueError('Invalid architecture name')
+import alex
+model = alex.Alex()
 
 if args.gpu >= 0:
     cuda.get_device(args.gpu).use()
     model.to_gpu()
+
 
 # Setup optimizer
 optimizer = optimizers.MomentumSGD(lr=0.01, momentum=0.9)
@@ -192,217 +106,79 @@ if args.resume:
     serializers.load_hdf5(args.resume, optimizer)
 
 
-# ------------------------------------------------------------------------------
-# This example consists of three threads: data feeder, logger and trainer.
-# These communicate with each other via Queue.
-data_q = queue.Queue(maxsize=1)
-res_q = queue.Queue()
+cropwidth = 32 - model.insize
+train_ac, test_ac, train_mean_loss, test_mean_loss = [], [], [], []
 
-cropwidth = 256 - model.insize
+# Learning loop
+stime = time.clock()
+for epoch in six.moves.range(1, n_epoch + 1):
+    print('epoch', epoch)
+    # training
+    model.train = True
+    perm = np.random.permutation(N)
+    sum_accuracy = 0
+    sum_loss = 0
+    for i in six.moves.range(0, N, batchsize):
+        print(i, N)
+        x_batch = np.reshape(cifar['train']['x'][perm[i:i + batchsize]],
+                            (batchsize, 3, model.insize, model.insize))
+        y_batch = cifar['train']['y'][perm[i:i + batchsize]]
 
-
-def read_image(path, center=False, flip=False):
-    # Data loading routine
-    image = np.asarray(Image.open(path)).transpose(2, 0, 1)
-    if center:
-        top = left = cropwidth / 2
-    else:
-        top = random.randint(0, cropwidth - 1)
-        left = random.randint(0, cropwidth - 1)
-    bottom = model.insize + top
-    right = model.insize + left
-
-    image = image[:, top:bottom, left:right].astype(np.float32)
-    image -= mean_image[:, top:bottom, left:right]
-    image /= 255
-    if flip and random.randint(0, 1) == 0:
-        return image[:, :, ::-1]
-    else:
-        return image
+        x = chainer.Variable(xp.asarray(x_batch), volatile='off')
+        t = chainer.Variable(xp.asarray(y_batch), volatile='off')
 
 
-def train_loop():
-    while True:
-        while data_q.empty():
-            time.sleep(0.1)
-        inp = data_q.get()
-        if inp == 'end':  # quit
-            res_q.put('end')
-            break
-        elif inp == 'train':  # restart training
-            res_q.put('train')
-            model.train = True
-            continue
-        elif inp == 'val':  # start validation
-            res_q.put('val')
-            serializers.save_hdf5(args.out, model)
-            serializers.save_hdf5(args.outstate, optimizer)
-            model.train = False
-            continue
+        # Pass the loss function (Classifier defines it) and its arguments
+        optimizer.update(model, x, t)
 
-        volatile = 'off' if model.train else 'on'
-        x = chainer.Variable(xp.asarray(inp[0]), volatile=volatile)
-        t = chainer.Variable(xp.asarray(inp[1]), volatile=volatile)
+        sum_loss += float(model.loss.data) * len(t.data)
+        sum_accuracy += float(model.accuracy.data) * len(t.data)
 
-        if model.train:
-            optimizer.update(model, x, t)
-        else:
-            model(x, t)
+    print('train mean loss={}, accuracy={}'.format(
+        sum_loss / N, sum_accuracy / N))
+    train_mean_loss.append(sum_loss / N)
+    train_ac.append(sum_accuracy / N)
 
-        res_q.put((float(model.loss.data), float(model.accuracy.data)))
-        del x, t
+    # evaluation
+    model.train = False
+
+    sum_accuracy = 0
+    sum_loss = 0
+    for i in six.moves.range(0, N_test, batchsize):
+        val_x_batch = np.reshape(cifar['test']['x'][i:i + batchsize],
+                                (batchsize, 3, model.insize, model.insize))
+        val_y_batch = cifar['test']['y'][i:i + batchsize]
+
+        x = chainer.Variable(xp.asarray(val_x_batch),
+                             volatile='on')
+        t = chainer.Variable(xp.asarray(val_y_batch),
+                             volatile='on')
 
 
+        loss = model(x, t)
+        sum_loss += float(loss.data) * len(t.data)
+        sum_accuracy += float(model.accuracy.data) * len(t.data)
 
-def feed_data():
-    # Data feeder
-    i = 0
-    count = 0
-
-    x_batch = np.ndarray(
-        (args.batchsize, 3, model.insize, model.insize), dtype=np.float32)
-    y_batch = np.ndarray((args.batchsize,), dtype=np.int32)
-    val_x_batch = np.ndarray(
-        (args.val_batchsize, 3, model.insize, model.insize), dtype=np.float32)
-    val_y_batch = np.ndarray((args.val_batchsize,), dtype=np.int32)
-
-    batch_pool = [None] * args.batchsize
-    val_batch_pool = [None] * args.val_batchsize
-    pool = multiprocessing.Pool(args.loaderjob)
-    data_q.put('train')
-    for epoch in six.moves.range(1, 1 + args.epoch):
-        print('epoch', epoch, file=sys.stderr)
-        print('learning rate', optimizer.lr, file=sys.stderr)
-        perm = np.random.permutation(len(train_list))
-        for idx in perm:
-            path, label = train_list[idx]
-            batch_pool[i] = pool.apply_async(read_image, (path, False, True))
-            y_batch[i] = label
-            i += 1
-
-            if i == args.batchsize:
-                for j, x in enumerate(batch_pool):
-                    x_batch[j] = x.get()
-                data_q.put((x_batch.copy(), y_batch.copy()))
-                i = 0
-
-            count += 1
-            if count % 100000 == 0:
-                data_q.put('val')
-                j = 0
-                for path, label in val_list:
-                    val_batch_pool[j] = pool.apply_async(
-                        read_image, (path, True, False))
-                    val_y_batch[j] = label
-                    j += 1
-
-                    if j == args.val_batchsize:
-                        for k, x in enumerate(val_batch_pool):
-                            val_x_batch[k] = x.get()
-                        data_q.put((val_x_batch.copy(), val_y_batch.copy()))
-                        j = 0
-                data_q.put('train')
-
-        optimizer.lr *= 0.97
-    pool.close()
-    pool.join()
-    data_q.put('end')
+    print('test  mean loss={}, accuracy={}'.format(
+        sum_loss / N_test, sum_accuracy / N_test))
+    test_mean_loss.append(sum_loss / N_test)
+    test_ac.append(sum_accuracy / N_test)
 
 
-def log_result():
-    # Logger
-    train_count = 0
-    train_cur_loss = 0
-    train_cur_accuracy = 0
-    begin_at = time.time()
-    val_begin_at = None
-    while True:
-        result = res_q.get()
-        if result == 'end':
-            print(file=sys.stderr)
-            break
-        elif result == 'train':
-            print(file=sys.stderr)
-            train = True
-            if val_begin_at is not None:
-                begin_at += time.time() - val_begin_at
-                val_begin_at = None
-            continue
-        elif result == 'val':
-            print(file=sys.stderr)
-            train = False
-            val_count = val_loss = val_accuracy = 0
-            val_begin_at = time.time()
-            continue
-
-        loss, accuracy = result
-        if train:
-            train_count += 1
-            duration = time.time() - begin_at
-            throughput = train_count * args.batchsize / duration
-            sys.stderr.write(
-                '\rtrain {} updates ({} samples) time: {} ({} images/sec)'
-                .format(train_count, train_count * args.batchsize,
-                        datetime.timedelta(seconds=duration), throughput))
-
-            train_cur_loss += loss
-            train_cur_accuracy += accuracy
-            if train_count % 1000 == 0:
-                mean_loss = train_cur_loss / 1000
-                mean_error = 1 - train_cur_accuracy / 1000
-                print(file=sys.stderr)
-                print(json.dumps({'type': 'train', 'iteration': train_count,
-                                  'error': mean_error, 'loss': mean_loss}))
-                sys.stdout.flush()
-                train_cur_loss = 0
-                train_cur_accuracy = 0
-        else:
-            val_count += args.val_batchsize
-            duration = time.time() - val_begin_at
-            throughput = val_count / duration
-            sys.stderr.write(
-                '\rval   {} batches ({} samples) time: {} ({} images/sec)'
-                .format(val_count / args.val_batchsize, val_count,
-                        datetime.timedelta(seconds=duration), throughput))
-
-            val_loss += loss
-            val_accuracy += accuracy
-            if val_count == 50000:
-                mean_loss = val_loss * args.val_batchsize / 50000
-                mean_error = 1 - val_accuracy * args.val_batchsize / 50000
-                print(file=sys.stderr)
-                print(json.dumps({'type': 'val', 'iteration': train_count,
-                                  'error': mean_error, 'loss': mean_loss}))
-                sys.stdout.flush()
+if args.logflag == 'on':
+    import log_cifar
+    etime = time.clock()
+    log_cifar.write_log(N, N_test, n_inputs, n_units, n_outputs, batchsize, 'CNN: Alex', stime, etime,
+                train_mean_loss, train_ac, test_mean_loss, test_ac, epoch, LOG_FILENAME='log.txt')
 
 
+if args.plotflag == 'on':
+    import plot_cifar
+    plot_cifar.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss, savename='result.jpg')
 
-# Invoke threads
-feeder = threading.Thread(target=feed_data)
-feeder.daemon = True
-feeder.start()
-logger = threading.Thread(target=log_result)
-logger.daemon = True
-logger.start()
-
-train_loop()
-feeder.join()
-logger.join()
 
 # Save final model
-serializers.save_hdf5(args.out, model)
-serializers.save_hdf5(args.outstate, optimizer)
+serializers.save_hdf5('cifar10_alex.model', model)
+serializers.save_hdf5('cifar10_alex.state', optimizer)
 
 
-
-
-
-"""
-            if not graph_generated:
-                with open('graph.dot', 'w') as o:
-                    o.write(computational_graph.build_computational_graph(
-                        (model.loss,)).dump())
-                print('generated graph', file=sys.stderr)
-                graph_generated = True
-
-"""

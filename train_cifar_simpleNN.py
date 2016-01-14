@@ -17,15 +17,11 @@ import chainer.links as L
 from chainer import optimizers
 from chainer import serializers
 
-import logging
 import time
-import matplotlib
-from matplotlib import pyplot as plt
 
 import data_cifar
 import net
 
-matplotlib.use('Agg')
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
@@ -139,61 +135,15 @@ for epoch in six.moves.range(1, n_epoch + 1):
 
 
 if args.logflag == 'on':
+    import log_cifar
     etime = time.clock()
-    LOG_FILENAME = 'log.txt'
-    logging.basicConfig(filename=LOG_FILENAME,
-                        level=logging.DEBUG,
-                        format='%(asctime)s %(message)s'
-                        )
-    logging.info(
-        'New trial **************************************************\n'
-        'All data: %d frames, train: %d frames / test: %d frames.\n'
-        '   Inputs = %d, Units= %d, Outputs = %d, Batchsize = %d.\n'
-        '   Network = %s'
-        '   Total Time = %.3f sec.\n'
-        '   Epoch: 1,  train mean loss=  %.5f, accuracy=  %.5f\n'
-        '              test mean loss=  %.5f, accuracy=  %.5f\n'
-        '   Epoch: %d, train mean loss=  %.5f, accuracy=  %.5f\n'
-        '              test mean loss=  %.3f, accuracy=  %.3f\n',
-        N + N_test, N, N_test,
-        n_inputs, n_units, n_outputs, batchsize,
-        args.net,
-        etime-stime,
-        train_mean_loss[0], train_ac[0],
-        test_mean_loss[0], test_ac[0],
-        epoch, train_mean_loss[-1], train_ac[-1],
-        test_mean_loss[-1], test_ac[-1]
-        )
-    f = open(LOG_FILENAME, 'rt')
-    try:
-        body = f.read()
-    finally:
-        f.close()
-    print('FILE:')
-    print(body)
+    log_cifar.write_log(N, N_test, n_inputs, n_units, n_outputs, batchsize, args.net, stime, etime,
+                train_mean_loss, train_ac, test_mean_loss, test_ac, epoch, LOG_FILENAME='log.txt')
 
 
 if args.plotflag == 'on':
-    fig = matplotlib.pyplot.figure()
-    ax1 = fig.add_subplot(211)
-    ax2 = fig.add_subplot(212)
-    ep = np.arange(len(train_ac)) + 1
-
-    ax1.plot(ep, train_ac, color="blue", linewidth=2.5, linestyle="-", label="Train")
-    ax1.plot(ep, test_ac, color="red",  linewidth=2.5, linestyle="-", label="Test")
-
-    ax2.plot(ep, train_mean_loss, color="blue", linewidth=2.5, linestyle="-", label="Train")
-    ax2.plot(ep, test_mean_loss, color="red",  linewidth=2.5, linestyle="-", label="Test")
-
-    ax1.set_title("Accuracy")
-    ax2.set_title("Mean Loss")
-
-    ax1.set_xlabel("epoch")
-    ax2.set_xlabel("epoch")
-    fig.tight_layout()
-    matplotlib.pyplot.legend(loc='upper right')
-
-    matplotlib.pyplot.savefig('result.jpg')
+    import plot_cifar
+    plot_cifar.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss, savename='result.jpg')
 
 
 # Save the model and the optimizer
@@ -202,3 +152,4 @@ if args.saveflag == 'on':
     serializers.save_hdf5('cifar10.model', model)
     print('save the optimizer')
     serializers.save_hdf5('cifar10.state', optimizer)
+
