@@ -56,7 +56,7 @@ cifar['test']['y'] = np.array(cifar['test']['y'], dtype=np.int32)
 N = cifar['ntraindata']
 N_test = cifar['ntestdata']
 batchsize = 100
-n_epoch = 3
+n_epoch = 30
 
 assert N % batchsize == 0
 assert N_test % batchsize == 0
@@ -143,18 +143,18 @@ for epoch in six.moves.range(1, n_epoch + 1):
     test_ac.append(sum_accuracy / N_test)
 
 
-if args.plotflag == 'on':
-    import plot
-    plot.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss,
-                     savename='result_cnn.jpg')
-
-
 if args.logflag == 'on':
     import log
     etime = time.clock()
     log.write_cnn(N, N_test, batchsize, 'CNN: Alex', stime, etime,
                   train_mean_loss, train_ac, test_mean_loss, test_ac, epoch,
                   LOG_FILENAME='log.txt')
+
+
+if args.plotflag == 'on':
+    import plot
+    plot.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss,
+                     savename='result_cnn.jpg')
 
 
 # Save the model and the optimizer
