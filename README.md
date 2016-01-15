@@ -16,12 +16,12 @@ Trainings can be done in two ways: Simple neural network or Convolutional neural
 
 In both case, if you use GPU, option ```-g 0```. If you want to export result figures, ```-p on``` and write log, ```-l on```.
 
-1. Simple neural network training (using net.py)
+### Simple neural network training (using net.py)
 ```
 python  train_nn.py
 ```
 
-2. Convolutional neural network training (using cnn_alex.py, cnn_googlenet.py, etc...)
+### Convolutional neural network training (using cnn_alex.py, cnn_googlenet.py, etc...)
 
 ```
 python  train_cnn.py
