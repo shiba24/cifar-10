@@ -8,3 +8,4 @@ cifar-10-batches-py/*
 *.state
 *.json
 *.jpg
+*.txt

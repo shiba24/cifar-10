@@ -18,10 +18,9 @@ from chainer import optimizers
 from chainer import serializers
 
 import time
-
 import data
-import nn
 
+import nn
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
@@ -56,15 +55,14 @@ cifar['test']['y'] = np.array(cifar['test']['y'], dtype=np.int32)
 
 N = cifar['ntraindata']
 N_test = cifar['ntestdata']
-
-n_inputs = cifar['ndim']
-n_units = 5000
-n_outputs = len(cifar['labels'])
 batchsize = 100
 n_epoch = 20
 
 
 # Prepare multi-layer perceptron model, defined in net.py
+n_inputs = cifar['ndim']
+n_units = 5000
+n_outputs = len(cifar['labels'])
 if args.net == 'simple':
     model = L.Classifier(nn.cifarMLP(n_inputs, n_units, n_outputs))
     if args.gpu >= 0:
@@ -102,8 +100,10 @@ for epoch in six.moves.range(1, n_epoch + 1):
     sum_accuracy = 0
     sum_loss = 0
     for i in six.moves.range(0, N, batchsize):
-        x = chainer.Variable(xp.asarray(cifar['train']['x'][perm[i:i + batchsize]]))
-        t = chainer.Variable(xp.asarray(cifar['train']['y'][perm[i:i + batchsize]]))
+        x = chainer.Variable(xp.asarray(
+                             cifar['train']['x'][perm[i:i + batchsize]]))
+        t = chainer.Variable(xp.asarray(
+                             cifar['train']['y'][perm[i:i + batchsize]]))
 
         # Pass the loss function (Classifier defines it) and its arguments
         optimizer.update(model, x, t)
@@ -137,13 +137,15 @@ for epoch in six.moves.range(1, n_epoch + 1):
 if args.logflag == 'on':
     import log
     etime = time.clock()
-    log.write_log(N, N_test, n_inputs, n_units, n_outputs, batchsize, args.net, stime, etime,
-                train_mean_loss, train_ac, test_mean_loss, test_ac, epoch, LOG_FILENAME='log.txt')
+    log.write_nn(N, N_test, n_inputs, n_units, n_outputs, batchsize, args.net,
+                 stime, etime, train_mean_loss, train_ac,
+                 test_mean_loss, test_ac, epoch, LOG_FILENAME='log.txt')
 
 
 if args.plotflag == 'on':
     import plot
-    plot.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss, savename='result.jpg')
+    plot.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss,
+                     savename='result.jpg')
 
 
 # Save the model and the optimizer
@@ -152,4 +154,3 @@ if args.saveflag == 'on':
     serializers.save_hdf5('cifar10.model', model)
     print('save the optimizer')
     serializers.save_hdf5('cifar10.state', optimizer)
-

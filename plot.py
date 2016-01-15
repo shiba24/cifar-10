@@ -1,7 +1,7 @@
+import numpy as np
 import matplotlib
-from matplotlib import pyplot as plt
-
 matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 
 
 
@@ -27,4 +27,3 @@ def plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss, savename='re
     matplotlib.pyplot.legend(loc='upper right')
 
     matplotlib.pyplot.savefig(savename)
-

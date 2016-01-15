@@ -16,7 +16,7 @@ class Alex(chainer.Chain):
     def __init__(self):
         super(Alex, self).__init__(
             conv1=L.Convolution2D(3,  96, 3, stride=2),
-            conv2=L.Convolution2D(96, 256,  3, pad=2),
+            conv2=L.Convolution2D(96, 256,  3, pad=1),
             conv3=L.Convolution2D(256, 384,  3, pad=1),
             conv4=L.Convolution2D(384, 384,  2, pad=1),
             conv5=L.Convolution2D(384, 256,  2, pad=1),
@@ -33,7 +33,7 @@ class Alex(chainer.Chain):
             F.local_response_normalization(self.conv2(h))), 3, stride=2)
         h = F.relu(self.conv3(h))
         h = F.relu(self.conv4(h))
-        h = F.max_pooling_2d(F.relu(self.conv5(h)), 3, stride=2)
+        h = F.max_pooling_2d(F.relu(self.conv5(h)), 3, stride=1)
         h = F.dropout(F.relu(self.fc6(h)), train=self.train)
         h = F.dropout(F.relu(self.fc7(h)), train=self.train)
         h = self.fc8(h)
