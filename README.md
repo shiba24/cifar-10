@@ -1,7 +1,7 @@
 Cifar-10 neural-net classifier
 ======
 
-The CIFAR-10 classifier by neural networks. Datasets from [cifar-10 datasets](http://www.cs.toronto.edu/~kriz/cifar.html).
+The CIFAR-10 classifier of neural network. Datasets from [cifar-10 datasets](http://www.cs.toronto.edu/~kriz/cifar.html).
 
 ## Requirements
 [chainer v1.5.1](http://chainer.org/)
