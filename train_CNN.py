@@ -64,7 +64,7 @@ xp = cuda.cupy if args.gpu >= 0 else np
 
 # Prepare dataset
 print('load cifar-10 dataset')
-cifar = data_cifar.load_data()
+cifar = data.load_data()
 cifar['train']['x'] = cifar['train']['x'].astype(np.float32)
 cifar['test']['x'] = cifar['test']['x'].astype(np.float32)
 cifar['train']['x'] /= 255
@@ -78,14 +78,14 @@ N_test = cifar['ntestdata']
 
 n_inputs = cifar['ndim']
 batchsize = 100
-n_epoch = 5
+n_epoch = 30
 
 assert N % batchsize == 0
 assert N_test % batchsize == 0
 
 # Prepare model
 import cnn_alex
-model = alex_cifar.Alex()
+model = cnn_alex.Alex()
 
 if args.gpu >= 0:
     cuda.get_device(args.gpu).use()
@@ -118,7 +118,6 @@ for epoch in six.moves.range(1, n_epoch + 1):
     sum_accuracy = 0
     sum_loss = 0
     for i in six.moves.range(0, N, batchsize):
-        print(i, N)
         x_batch = np.reshape(cifar['train']['x'][perm[i:i + batchsize]],
                             (batchsize, 3, model.insize, model.insize))
         y_batch = cifar['train']['y'][perm[i:i + batchsize]]
@@ -167,13 +166,13 @@ for epoch in six.moves.range(1, n_epoch + 1):
 if args.logflag == 'on':
     import log
     etime = time.clock()
-    log_cifar.write_log(N, N_test, n_inputs, n_units, n_outputs, batchsize, 'CNN: Alex', stime, etime,
+    log.write_log(N, N_test, n_inputs, n_units, n_outputs, batchsize, 'CNN: Alex', stime, etime,
                 train_mean_loss, train_ac, test_mean_loss, test_ac, epoch, LOG_FILENAME='log.txt')
 
 
 if args.plotflag == 'on':
     import plot
-    plot_cifar.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss, savename='result.jpg')
+    plot.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss, savename='result.jpg')
 
 
 # Save final model

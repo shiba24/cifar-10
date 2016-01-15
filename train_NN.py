@@ -45,7 +45,7 @@ args = parser.parse_args()
 
 # Prepare dataset
 print('load cifar-10 dataset')
-cifar = data_cifar.load_data()
+cifar = data.load_data()
 cifar['train']['x'] = cifar['train']['x'].astype(np.float32)
 cifar['test']['x'] = cifar['test']['x'].astype(np.float32)
 cifar['train']['x'] /= 255
@@ -66,14 +66,14 @@ n_epoch = 20
 
 # Prepare multi-layer perceptron model, defined in net.py
 if args.net == 'simple':
-    model = L.Classifier(net.cifarMLP(n_inputs, n_units, n_outputs))
+    model = L.Classifier(nn.cifarMLP(n_inputs, n_units, n_outputs))
     if args.gpu >= 0:
         cuda.get_device(args.gpu).use()
         model.to_gpu()
     xp = np if args.gpu < 0 else cuda.cupy
 elif args.net == 'parallel':
     cuda.check_cuda_available()
-    model = L.Classifier(net.cifarMLPParallel(n_inputs, n_units, n_outputs))
+    model = L.Classifier(nn.cifarMLPParallel(n_inputs, n_units, n_outputs))
     xp = cuda.cupy
 
 # Setup optimizer
@@ -137,13 +137,13 @@ for epoch in six.moves.range(1, n_epoch + 1):
 if args.logflag == 'on':
     import log
     etime = time.clock()
-    log_cifar.write_log(N, N_test, n_inputs, n_units, n_outputs, batchsize, args.net, stime, etime,
+    log.write_log(N, N_test, n_inputs, n_units, n_outputs, batchsize, args.net, stime, etime,
                 train_mean_loss, train_ac, test_mean_loss, test_ac, epoch, LOG_FILENAME='log.txt')
 
 
 if args.plotflag == 'on':
     import plot
-    plot_cifar.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss, savename='result.jpg')
+    plot.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss, savename='result.jpg')
 
 
 # Save the model and the optimizer

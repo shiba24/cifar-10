@@ -4,3 +4,7 @@
 *.pyc
 *~
 cifar-10-batches-py/*
+*.model
+*.state
+*.json
+*.jpg
