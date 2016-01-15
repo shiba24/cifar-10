@@ -22,12 +22,12 @@ python data.py
 
 Training can be done in two ways: Simple neural network or Convolutional neural network.  In either case, if you use GPU, add option ```-g 0```.  If you want to export result figures, ```-p on```, write log, ```-l on```, and save models ```-s on```.
 
-#### Simple neural network training
+#### Simple neural network
 ```
 python  train_nn.py
 ```
 
-#### Convolutional neural network training
+#### Convolutional neural network
 
 ```
 python  train_cnn.py
