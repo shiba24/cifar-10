@@ -9,7 +9,7 @@ The CIFAR-10 classifier example. Datasets from [cifar-10 datasets](http://www.cs
 [Other packages](https://github.com/pfnet/chainer#requirements) around chainer.
 
 
-## USAGE
+## Usage
 ### Data acquisition and shaping:
 ```
 wget https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz
