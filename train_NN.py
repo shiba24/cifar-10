@@ -1,28 +1,14 @@
 #!/usr/bin/env python
-"""Chainer example: train CNN
+"""Chainer example: train a multi-layer perceptron on cifar
 
-from __future__ import print_function
-
-import datetime
-import json
-import multiprocessing
-import os
-import random
-import sys
-import threading
-
-from PIL import Image
-
-import six.moves.cPickle as pickle
-from six.moves import queue
+This is a minimal example to write a feed-forward net.
 
 """
-
 from __future__ import print_function
+import argparse
 
 import numpy as np
 import six
-import argparse
 
 import chainer
 from chainer import computational_graph
@@ -31,13 +17,11 @@ import chainer.links as L
 from chainer import optimizers
 from chainer import serializers
 
-import logging
 import time
-#import matplotlib
-#from matplotlib import pyplot as plt
 
-import data_cifar
-# matplotlib.use('Agg')
+import data
+import nn
+
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
@@ -58,10 +42,6 @@ parser.add_argument('--saveflag', '-s', choices=('on', 'off'),
                     default='off', help='Save model and optimizer flag')
 args = parser.parse_args()
 
-if args.gpu >= 0:
-    cuda.check_cuda_available()
-xp = cuda.cupy if args.gpu >= 0 else np
-
 
 # Prepare dataset
 print('load cifar-10 dataset')
@@ -78,23 +58,26 @@ N = cifar['ntraindata']
 N_test = cifar['ntestdata']
 
 n_inputs = cifar['ndim']
+n_units = 5000
+n_outputs = len(cifar['labels'])
 batchsize = 100
-n_epoch = 5
+n_epoch = 20
 
-assert N % batchsize == 0
-assert N_test % batchsize == 0
 
-# Prepare model
-import alex_cifar
-model = alex_cifar.Alex()
-
-if args.gpu >= 0:
-    cuda.get_device(args.gpu).use()
-    model.to_gpu()
-
+# Prepare multi-layer perceptron model, defined in net.py
+if args.net == 'simple':
+    model = L.Classifier(net.cifarMLP(n_inputs, n_units, n_outputs))
+    if args.gpu >= 0:
+        cuda.get_device(args.gpu).use()
+        model.to_gpu()
+    xp = np if args.gpu < 0 else cuda.cupy
+elif args.net == 'parallel':
+    cuda.check_cuda_available()
+    model = L.Classifier(net.cifarMLPParallel(n_inputs, n_units, n_outputs))
+    xp = cuda.cupy
 
 # Setup optimizer
-optimizer = optimizers.MomentumSGD(lr=0.01, momentum=0.9)
+optimizer = optimizers.Adam()
 optimizer.setup(model)
 
 # Init/Resume
@@ -106,27 +89,21 @@ if args.resume:
     serializers.load_hdf5(args.resume, optimizer)
 
 
-cropwidth = 32 - model.insize
 train_ac, test_ac, train_mean_loss, test_mean_loss = [], [], [], []
+
 
 # Learning loop
 stime = time.clock()
 for epoch in six.moves.range(1, n_epoch + 1):
     print('epoch', epoch)
+
     # training
-    model.train = True
     perm = np.random.permutation(N)
     sum_accuracy = 0
     sum_loss = 0
     for i in six.moves.range(0, N, batchsize):
-        print(i, N)
-        x_batch = np.reshape(cifar['train']['x'][perm[i:i + batchsize]],
-                            (batchsize, 3, model.insize, model.insize))
-        y_batch = cifar['train']['y'][perm[i:i + batchsize]]
-
-        x = chainer.Variable(xp.asarray(x_batch), volatile='off')
-        t = chainer.Variable(xp.asarray(y_batch), volatile='off')
-
+        x = chainer.Variable(xp.asarray(cifar['train']['x'][perm[i:i + batchsize]]))
+        t = chainer.Variable(xp.asarray(cifar['train']['y'][perm[i:i + batchsize]]))
 
         # Pass the loss function (Classifier defines it) and its arguments
         optimizer.update(model, x, t)
@@ -140,21 +117,13 @@ for epoch in six.moves.range(1, n_epoch + 1):
     train_ac.append(sum_accuracy / N)
 
     # evaluation
-    model.train = False
-
     sum_accuracy = 0
     sum_loss = 0
     for i in six.moves.range(0, N_test, batchsize):
-        val_x_batch = np.reshape(cifar['test']['x'][i:i + batchsize],
-                                (batchsize, 3, model.insize, model.insize))
-        val_y_batch = cifar['test']['y'][i:i + batchsize]
-
-        x = chainer.Variable(xp.asarray(val_x_batch),
+        x = chainer.Variable(xp.asarray(cifar['test']['x'][i:i + batchsize]),
                              volatile='on')
-        t = chainer.Variable(xp.asarray(val_y_batch),
+        t = chainer.Variable(xp.asarray(cifar['test']['y'][i:i + batchsize]),
                              volatile='on')
-
-
         loss = model(x, t)
         sum_loss += float(loss.data) * len(t.data)
         sum_accuracy += float(model.accuracy.data) * len(t.data)
@@ -166,19 +135,21 @@ for epoch in six.moves.range(1, n_epoch + 1):
 
 
 if args.logflag == 'on':
-    import log_cifar
+    import log
     etime = time.clock()
-    log_cifar.write_log(N, N_test, n_inputs, n_units, n_outputs, batchsize, 'CNN: Alex', stime, etime,
+    log_cifar.write_log(N, N_test, n_inputs, n_units, n_outputs, batchsize, args.net, stime, etime,
                 train_mean_loss, train_ac, test_mean_loss, test_ac, epoch, LOG_FILENAME='log.txt')
 
 
 if args.plotflag == 'on':
-    import plot_cifar
+    import plot
     plot_cifar.plot_result(train_ac, test_ac, train_mean_loss, test_mean_loss, savename='result.jpg')
 
 
-# Save final model
-serializers.save_hdf5('cifar10_alex.model', model)
-serializers.save_hdf5('cifar10_alex.state', optimizer)
-
+# Save the model and the optimizer
+if args.saveflag == 'on':
+    print('save the model')
+    serializers.save_hdf5('cifar10.model', model)
+    print('save the optimizer')
+    serializers.save_hdf5('cifar10.state', optimizer)
 
