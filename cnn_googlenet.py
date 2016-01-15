@@ -5,7 +5,7 @@ import chainer.links as L
 
 class GoogLeNet(chainer.Chain):
 
-    insize = 224
+    insize = 32         # 224
 
     def __init__(self):
         super(GoogLeNet, self).__init__(

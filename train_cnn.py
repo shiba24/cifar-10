@@ -41,7 +41,6 @@ if args.gpu >= 0:
     cuda.check_cuda_available()
 xp = cuda.cupy if args.gpu >= 0 else np
 
-
 # Prepare dataset
 print('load cifar-10 dataset')
 cifar = data.load_data()
@@ -65,10 +64,10 @@ assert N_test % batchsize == 0
 # Prepare model of Convolution NN
 if args.net == 'alex':
     import cnn_alex
-    model = cnn_alex.Alex()
+    model = cnn_alex.Alex_2()
 elif args.net == 'googlenet':
     import cnn_googlenet
-    model = cnn_googlenet.googlenet()
+    model = cnn_googlenet.GoogLeNet()
 
 
 if args.gpu >= 0:
