@@ -29,8 +29,8 @@ parser.add_argument('--logflag', '-l', choices=('on', 'off'),
                     default='off', help='Writing log flag')
 parser.add_argument('--initmodel', '-m', default='',
                     help='Initialize the model from given file')
-parser.add_argument('--net', '-n', choices=('alex', 'googlenet'),
-                    default='alex', help='Network type')
+parser.add_argument('--net', '-n', choices=('alex', 'alexbn', 'googlenet'),
+                    default='alexbn', help='Network type')
 parser.add_argument('--plotflag', '-p', choices=('on', 'off'),
                     default='off', help='Accuracy plot flag')
 parser.add_argument('--resume', '-r', default='',
@@ -52,7 +52,7 @@ N = len(cifar['train']['x'])
 N_test = len(cifar['test']['x'])
 print(N, N_test)
 batchsize = 100
-n_epoch = 12
+n_epoch = 30
 
 assert N % batchsize == 0
 assert N_test % batchsize == 0
@@ -60,6 +60,9 @@ assert N_test % batchsize == 0
 
 # Prepare Convolution NN model
 if args.net == 'alex':
+    import cnn
+    model = cnn.CifarCNN_2()
+elif args.net == 'alexbn':
     import cnn
     model = cnn.CifarCNN_bn()
 elif args.net == 'googlenet':
@@ -144,7 +147,7 @@ for epoch in six.moves.range(1, n_epoch + 1):
 if args.logflag == 'on':
     import log
     etime = time.clock()
-    log.write_cnn(N, N_test, batchsize, 'CNN: Alex', stime, etime,
+    log.write_cnn(N, N_test, batchsize, 'CNN' + args.net, stime, etime,
                   train_mean_loss, train_ac, test_mean_loss, test_ac, epoch,
                   LOG_FILENAME='log.txt')
 
