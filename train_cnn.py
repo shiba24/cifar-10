@@ -17,10 +17,12 @@ from chainer import optimizers
 from chainer import serializers
 
 import time
-import data
+import datahandler as dh
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
+parser.add_argument('--data', '-d', choices=('on', 'off'),
+                    default='off', help='Data normalization and padding flag')
 parser.add_argument('--gpu', '-g', default=-1, type=int,
                     help='GPU ID (negative value indicates CPU)')
 parser.add_argument('--logflag', '-l', choices=('on', 'off'),
@@ -37,25 +39,20 @@ parser.add_argument('--saveflag', '-s', choices=('on', 'off'),
                     default='off', help='Save model and optimizer flag')
 args = parser.parse_args()
 
-if args.gpu >= 0:
-    cuda.check_cuda_available()
-xp = cuda.cupy if args.gpu >= 0 else np
+if args.gpu >= 0: cuda.check_cuda_available()
+
 
 # Prepare dataset
 print('load cifar-10 dataset')
-cifar = data.load_data()
-cifar['train']['x'] = cifar['train']['x'].astype(np.float32)
-cifar['test']['x'] = cifar['test']['x'].astype(np.float32)
-cifar['train']['x'] /= 255
-cifar['test']['x'] /= 255
-cifar['train']['y'] = np.array(cifar['train']['y'], dtype=np.int32)
-cifar['test']['y'] = np.array(cifar['test']['y'], dtype=np.int32)
+if args.data == 'on': cifar = dh.load_processed_data()
+else: cifar = dh.load_data()
 
 
-N = cifar['ntraindata']
-N_test = cifar['ntestdata']
+N = len(cifar['train']['x'])
+N_test = len(cifar['test']['x'])
+print(N, N_test)
 batchsize = 100
-n_epoch = 30
+n_epoch = 12
 
 assert N % batchsize == 0
 assert N_test % batchsize == 0
@@ -71,13 +68,16 @@ elif args.net == 'googlenet':
 
 
 if args.gpu >= 0:
+    xp = cuda.cupy
     cuda.get_device(args.gpu).use()
     model.to_gpu()
+else: xp = np
 
 
 # Setup optimizer
 optimizer = optimizers.MomentumSGD(lr=0.01, momentum=0.9)
 optimizer.setup(model)
+
 
 # Init/Resume
 if args.initmodel:
