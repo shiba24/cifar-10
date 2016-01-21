@@ -70,7 +70,7 @@ class Alex_2(chainer.Chain):
             F.local_response_normalization(self.conv1(x))), 2, stride=2)
         h = F.max_pooling_2d(F.relu(
             F.local_response_normalization(self.conv2(h))), 2, stride=2)
-        h = F.relu(self.conv3(h))
+        h = F.dropout(F.relu(self.conv3(h)), ratio=0.7, train=self.train)
         h = F.max_pooling_2d(F.relu(self.conv4(h)), 2, stride=2)
         h = F.max_pooling_2d(F.relu(self.conv5(h)), 2, stride=2, cover_all=True)
         h = F.dropout(F.relu(self.fc6(h)), ratio=0.7, train=self.train)
