@@ -18,13 +18,14 @@ from chainer import optimizers
 from chainer import serializers
 
 import time
-import data
+import datahandler as dh
 
 import nn
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
-
+parser.add_argument('--data', '-d', choices=('on', 'off'),
+                    default='off', help='Data normalization and augmentation flag')
 parser.add_argument('--gpu', '-g', default=-1, type=int,
                     help='GPU ID (negative value indicates CPU)')
 parser.add_argument('--logflag', '-l', choices=('on', 'off'),
@@ -44,17 +45,12 @@ args = parser.parse_args()
 
 # Prepare dataset
 print('load cifar-10 dataset')
-cifar = data.load_data()
-cifar['train']['x'] = cifar['train']['x'].astype(np.float32)
-cifar['test']['x'] = cifar['test']['x'].astype(np.float32)
-cifar['train']['x'] /= 255
-cifar['test']['x'] /= 255
-cifar['train']['y'] = np.array(cifar['train']['y'], dtype=np.int32)
-cifar['test']['y'] = np.array(cifar['test']['y'], dtype=np.int32)
+if args.data == 'on': cifar = dh.load_processed_data()
+else: cifar = dh.load_data()
 
 
-N = cifar['ntraindata']
-N_test = cifar['ntestdata']
+N = len(cifar['train']['x'])
+N_test = len(cifar['test']['x'])
 batchsize = 100
 n_epoch = 20
 
@@ -88,7 +84,6 @@ if args.resume:
 
 
 train_ac, test_ac, train_mean_loss, test_mean_loss = [], [], [], []
-
 
 # Learning loop
 stime = time.clock()

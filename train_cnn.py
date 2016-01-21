@@ -22,7 +22,7 @@ import datahandler as dh
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
 parser.add_argument('--data', '-d', choices=('on', 'off'),
-                    default='off', help='Data normalization and padding flag')
+                    default='off', help='Data normalization and augmentation flag')
 parser.add_argument('--gpu', '-g', default=-1, type=int,
                     help='GPU ID (negative value indicates CPU)')
 parser.add_argument('--logflag', '-l', choices=('on', 'off'),
@@ -58,10 +58,10 @@ assert N % batchsize == 0
 assert N_test % batchsize == 0
 
 
-# Prepare model of Convolution NN
+# Prepare Convolution NN model
 if args.net == 'alex':
-    import cnn_alex
-    model = cnn_alex.Alex_2()
+    import cnn
+    model = cnn.CifarCNN_bn()
 elif args.net == 'googlenet':
     import cnn_googlenet
     model = cnn_googlenet.GoogLeNet()
@@ -90,7 +90,6 @@ if args.resume:
 
 cropwidth = 32 - model.insize
 train_ac, test_ac, train_mean_loss, test_mean_loss = [], [], [], []
-
 
 # Learning loop
 stime = time.clock()

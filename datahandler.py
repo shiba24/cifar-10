@@ -2,7 +2,7 @@ import numpy as np
 from numpy import linalg as la
 import os
 import data
-
+import six
 
 def normalize(data):
     """ Normalize data """
@@ -18,9 +18,9 @@ def normalize(data):
     return data_n
 
 
-def pad_addnoise(data_x, data_y, mean=0.0, sd=1.0, noiseratio=0.5, mixratio=0.2):
-    """ Add noise ~ N(mean, sd) """
-    print('Adding noise to data......')
+def pad_addnoise(data_x, data_y, mean=0.0, sd=1.0, noiseratio=0.5, mixratio=0.3):
+    """ Data padding: add noise ~ N(mean, sd) """
+    print('Data padding: adding noise to data......')
     col, row = np.int(len(data_x) * mixratio), len(data_x[0])
     noise = np.random.normal(mean, sd, (col, row)) * np.sqrt(noiseratio)
     noised = np.array(data_x[0:col] * np.sqrt(1 - noiseratio) + noise, dtype=np.float32)
@@ -30,8 +30,8 @@ def pad_addnoise(data_x, data_y, mean=0.0, sd=1.0, noiseratio=0.5, mixratio=0.2)
 
 
 def pad_rightleft(data_x, data_y, mixratio=1.0, ch=3):
-    """ Rightside left """
-    print('Rightside to left......')
+    """ Data padding: rightside left """
+    print('Data padding: rightside left......')
     col, row = np.int(len(data_x) * mixratio), len(data_x[0]) / ch
 
     rl = data_x.copy()
@@ -48,14 +48,19 @@ def process_data():
     cifar['train']['x'] = normalize(cifar['train']['x'])
     cifar['test']['x'] = normalize(cifar['test']['x'])
     cifar['train']['x'], cifar['train']['y'] =  pad_rightleft(cifar['train']['x'], cifar['train']['y'])
-    cifar['train']['x'], cifar['train']['y'] =  pad_addnoise(cifar['train']['x'], cifar['train']['y'])
-#    data.save_pkl(cifar, savename='cifar_processed.pkl')
+#    cifar['train']['x'], cifar['train']['y'] =  pad_addnoise(cifar['train']['x'], cifar['train']['y'])
+    data.save_pkl(cifar, savename='cifar_processed.pkl')
     return cifar
 
 
 def load_processed_data():
-    cifar = process_data()
-    return cifar
+    if not os.path.exists('cifar_processed.pkl'):
+        cifar = process_data()
+        return cifar
+    else:
+        with open('cifar_processed.pkl', 'rb') as cifar_pickle:
+            data = six.moves.cPickle.load(cifar_pickle)
+        return data
 
 
 def load_data():
@@ -69,17 +74,12 @@ def load_data():
     return cifar
 
 
-
-
 """
 def pad_updown(data):
     return data
 
-
 def pad_crop(data):
     return data
-
-
 
 def load_processed_data():
     if not os.path.exists('cifar_processed.pkl'):
