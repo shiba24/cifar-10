@@ -26,16 +26,20 @@ Training can be done in two ways: Simple neural network or Convolutional neural 
 ```
 python  train_nn.py
 ```
-"Simple" means fully-connected.
+"Simple" means fully-connected .
 
 #### Convolutional neural network
 
 ```
 python  train_cnn.py
 ```
+You can change models by options ```-m alex```, ```-m alexbn```. ```--model``` also works.
 
-Jan, 2016: Googlenet can not be used yet. Please use cnn_alex.py (default in ```train_cnn.py```).
+### For better accuracy...?
+In order to get accuracy over 80% and more, you put this: ```-d on``` or ```--data on```. This option make data normalized and augmented! To know detail, see ```datahandler.py```.
 
+
+Jan, 2016: Googlenet can not be used yet. Please use cnn.py (default in ```train_cnn.py```).
 
 ## Author
 
