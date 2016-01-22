@@ -4,21 +4,24 @@ import os
 import data
 import six
 
-def normalize(data):
+def normalize(data, M=None, Sd=None):
     """ Normalize data """
     print('Data normalization......')
-    M = np.mean(data, axis=0)        # mean
-    Sd = np.std(data, axis=0)        # Std
+    if M == None:
+        M = np.mean(data, axis=0)        # mean
+    if Sd == None:
+        Sd = np.std(data, axis=0)        # Std
+
     stmat = np.zeros([len(Sd), len(Sd)])
     for i in range(0, len(Sd)):
         stmat[i][i] = Sd[i]
     S_inv = la.inv(np.matrix(stmat))
     data_n = S_inv.dot((np.matrix(data - M)).T)
     data_n = np.array(data_n.T, dtype=np.float32)
-    return data_n
+    return data_n, M, Sd
 
 
-def pad_addnoise(data_x, data_y, mean=0.0, sd=1.0, noiseratio=0.5, mixratio=0.3):
+def pad_addnoise(data_x, data_y, mean=0.0, sd=1.0, mixratio=1.0, noiseratio=0.3):
     """ Data padding: add noise ~ N(mean, sd) """
     print('Data padding: adding noise to data......')
     col, row = np.int(len(data_x) * mixratio), len(data_x[0])
@@ -43,13 +46,17 @@ def pad_rightleft(data_x, data_y, mixratio=1.0, ch=3):
     return rl_x, rl_y
 
 
-def process_data():
+def process_data(augmentation=2):
     cifar = load_data()
-    cifar['train']['x'] = normalize(cifar['train']['x'])
-    cifar['test']['x'] = normalize(cifar['test']['x'])
-    cifar['train']['x'], cifar['train']['y'] =  pad_rightleft(cifar['train']['x'], cifar['train']['y'])
-#    cifar['train']['x'], cifar['train']['y'] =  pad_addnoise(cifar['train']['x'], cifar['train']['y'])
-    data.save_pkl(cifar, savename='cifar_processed.pkl')
+    cifar['train']['x'], m, sd = normalize(cifar['train']['x'])
+    cifar['test']['x'], m, sd = normalize(cifar['test']['x'], M=m, Sd=sd)
+    if augmentation > 0 and augmentation <= 1.0:
+        cifar['train']['x'], cifar['train']['y'] =  pad_rightleft(cifar['train']['x'], cifar['train']['y'],
+                                                                  mixratio=augmentation)
+    else:
+        cifar['train']['x'], cifar['train']['y'] =  pad_addnoise(cifar['train']['x'], cifar['train']['y'],
+                                                                 mixratio=augmentation - 1.0)
+#    data.save_pkl(cifar, savename='cifar_processed.pkl')
     return cifar
 
 

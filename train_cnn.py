@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-"""Chainer example: train CNN
+"""
+Cifar-10 classifier training using Convolution Neural Network.
 
 """
 
@@ -21,12 +22,18 @@ import datahandler as dh
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
+parser.add_argument('--augmentation', '-a', default=1.5, type=float,
+                    help='The amount of data augmentation')
+parser.add_argument('--batchsize', '-b', default=100, type=int,
+                    help='Batch size of training')
 parser.add_argument('--data', '-d', choices=('on', 'off'),
                     default='off', help='Data normalization and augmentation flag')
+parser.add_argument('--epoch', '-e', default=30, type=int,
+                    help='Number of epoch of training')
 parser.add_argument('--gpu', '-g', default=-1, type=int,
                     help='GPU ID (negative value indicates CPU)')
 parser.add_argument('--logflag', '-l', choices=('on', 'off'),
-                    default='off', help='Writing log flag')
+                    default='on', help='Writing log flag')
 parser.add_argument('--initmodel', '-m', default='',
                     help='Initialize the model from given file')
 parser.add_argument('--net', '-n', choices=('alex', 'alexbn', 'googlenet'),
@@ -41,19 +48,16 @@ args = parser.parse_args()
 
 if args.gpu >= 0: cuda.check_cuda_available()
 
-
 # Prepare dataset
 print('load cifar-10 dataset')
-if args.data == 'on': cifar = dh.load_processed_data()
+if args.data == 'on': cifar = dh.process_data(augmentation=args.augmentation)
 else: cifar = dh.load_data()
-
 
 N = len(cifar['train']['x'])
 N_test = len(cifar['test']['x'])
 print(N, N_test)
-batchsize = 100
-n_epoch = 30
-
+batchsize = args.batchsize
+n_epoch = args.epoch
 assert N % batchsize == 0
 assert N_test % batchsize == 0
 
@@ -69,16 +73,15 @@ elif args.net == 'googlenet':
     import cnn_googlenet
     model = cnn_googlenet.GoogLeNet()
 
-
+# GPU settings
 if args.gpu >= 0:
     xp = cuda.cupy
     cuda.get_device(args.gpu).use()
     model.to_gpu()
 else: xp = np
 
-
 # Setup optimizer
-optimizer = optimizers.MomentumSGD(lr=0.01, momentum=0.9)
+optimizer = optimizers.Adam()
 optimizer.setup(model)
 
 
@@ -92,9 +95,8 @@ if args.resume:
 
 
 cropwidth = 32 - model.insize
+# Learning
 train_ac, test_ac, train_mean_loss, test_mean_loss = [], [], [], []
-
-# Learning loop
 stime = time.clock()
 for epoch in six.moves.range(1, n_epoch + 1):
     print('epoch', epoch)
@@ -147,7 +149,7 @@ for epoch in six.moves.range(1, n_epoch + 1):
 if args.logflag == 'on':
     import log
     etime = time.clock()
-    log.write_cnn(N, N_test, batchsize, 'CNN' + args.net, stime, etime,
+    log.write_cnn(N, N_test, batchsize, 'CNN: ' + args.net, stime, etime,
                   train_mean_loss, train_ac, test_mean_loss, test_ac, epoch,
                   LOG_FILENAME='log.txt')
 
