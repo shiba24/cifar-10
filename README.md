@@ -33,7 +33,8 @@ python  train_nn.py
 ```
 python  train_cnn.py
 ```
-You can change models by options ```-m alex```, ```-m alexbn```. ```--model``` also works.
+You can change models by options ```-m alex```, ```-m alexbn```.
+
 
 ### For better accuracy...?
 In order to get accuracy over 80% and more, you put this: ```-d on``` or ```--data on```. This option make data normalized and augmented! To know detail, see ```datahandler.py```.
