@@ -96,9 +96,8 @@ class CifarCNN_bn(chainer.Chain):
             conv3=L.Convolution2D(256, 384,  3, pad=1),
             conv4=L.Convolution2D(384, 384,  3, pad=1),
             conv5=L.Convolution2D(384, 256,  3, pad=1),
-            fc6=L.Linear(1024, 1024),
-            fc7=L.Linear(1024, 128),
-            fc8=L.Linear(128, 10),
+            fc6=L.Linear(1024, 128),
+            fc7=L.Linear(128, 10),
             )
         self.train = True
  
@@ -107,12 +106,11 @@ class CifarCNN_bn(chainer.Chain):
         h = F.max_pooling_2d(F.relu(h), 2, stride=2)
         h = self.bn2(self.conv2(h), test=not self.train)
         h = F.max_pooling_2d(F.relu(h), 2, stride=2)
-        h = F.dropout(F.relu(self.conv3(h)), ratio=0.7, train=self.train)
+        h = F.dropout(F.relu(self.conv3(h)), ratio=0.6, train=self.train)
         h = F.max_pooling_2d(F.relu(self.conv4(h)), 2, stride=2)
         h = F.max_pooling_2d(F.relu(self.conv5(h)), 2, stride=2, cover_all=True)
-        h = F.dropout(F.relu(self.fc6(h)), ratio=0.7, train=self.train)
-        h = F.dropout(F.relu(self.fc7(h)), ratio=0.7, train=self.train)
-        h = self.fc8(h)
+        h = F.dropout(F.relu(self.fc6(h)), ratio=0.6, train=self.train)
+        h = self.fc7(h)
 
         self.loss = F.softmax_cross_entropy(h, t)
         self.accuracy = F.accuracy(h, t)

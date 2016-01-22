@@ -38,6 +38,8 @@ parser.add_argument('--initmodel', '-m', default='',
                     help='Initialize the model from given file')
 parser.add_argument('--net', '-n', choices=('alex', 'alexbn', 'googlenet'),
                     default='alexbn', help='Network type')
+parser.add_argument('--optimizer', '-o', choices=('adam', 'adagrad', 'sgd'),
+                    default='sgd', help='Optimizer algorithm')
 parser.add_argument('--plotflag', '-p', choices=('on', 'off'),
                     default='off', help='Accuracy plot flag')
 parser.add_argument('--resume', '-r', default='',
@@ -81,7 +83,12 @@ if args.gpu >= 0:
 else: xp = np
 
 # Setup optimizer
-optimizer = optimizers.Adam()
+if args.optimizer == 'adam':
+    optimizer = optimizers.Adam(alpha=0.01)
+elif args.optimizer == 'adagrad':
+    optimizer = optimizers.AdaGrad()
+elif args.optimizer == 'sgd':
+    optimizer = optimizers.MomentumSGD(lr=0.01)
 optimizer.setup(model)
 
 
@@ -114,6 +121,7 @@ for epoch in six.moves.range(1, n_epoch + 1):
         t = chainer.Variable(xp.asarray(y_batch), volatile='off')
 
         # Pass the loss function (Classifier defines it) and its arguments
+        optimizer.weight_decay(0.0001)
         optimizer.update(model, x, t)
 
         sum_loss += float(model.loss.data) * len(t.data)
@@ -123,6 +131,10 @@ for epoch in six.moves.range(1, n_epoch + 1):
         sum_loss / N, sum_accuracy / N))
     train_mean_loss.append(sum_loss / N)
     train_ac.append(sum_accuracy / N)
+
+    if args.optimizer == 'sgd' and epoch > 2:
+        if train_mean_loss[-2:-1] < 0.02:
+            optimizer.lr = 0.005
 
     # evaluation
     model.train = False
