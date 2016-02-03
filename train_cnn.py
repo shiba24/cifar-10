@@ -9,6 +9,7 @@ import argparse
 
 import numpy as np
 import six
+from tqdm import tqdm
 
 import chainer
 from chainer import computational_graph
@@ -101,7 +102,6 @@ if args.resume:
     serializers.load_hdf5(args.resume, optimizer)
 
 
-cropwidth = 32 - model.insize
 # Learning
 train_ac, test_ac, train_mean_loss, test_mean_loss = [], [], [], []
 stime = time.clock()
@@ -110,9 +110,8 @@ for epoch in six.moves.range(1, n_epoch + 1):
     # training
     model.train = True
     perm = np.random.permutation(N)
-    sum_accuracy = 0
-    sum_loss = 0
-    for i in six.moves.range(0, N, batchsize):
+    sum_accuracy, sum_loss = 0, 0
+    for i in tqdm(six.moves.range(0, N, batchsize)):
         x_batch = np.reshape(cifar['train']['x'][perm[i:i + batchsize]],
                              (batchsize, 3, model.insize, model.insize))
         y_batch = cifar['train']['y'][perm[i:i + batchsize]]
@@ -138,9 +137,7 @@ for epoch in six.moves.range(1, n_epoch + 1):
 
     # evaluation
     model.train = False
-
-    sum_accuracy = 0
-    sum_loss = 0
+    sum_accuracy, sum_loss = 0, 0
     for i in six.moves.range(0, N_test, batchsize):
         val_x_batch = np.reshape(cifar['test']['x'][i:i + batchsize],
                                  (batchsize, 3, model.insize, model.insize))

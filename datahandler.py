@@ -3,6 +3,8 @@ from numpy import linalg as la
 import os
 import data
 import six
+from tqdm import tqdm
+
 
 def normalize(data, M=None, Sd=None):
     """ Normalize data """
@@ -35,15 +37,38 @@ def pad_addnoise(data_x, data_y, mean=0.0, sd=1.0, mixratio=1.0, noiseratio=0.3)
 def pad_rightleft(data_x, data_y, mixratio=1.0, ch=3):
     """ Data padding: rightside left """
     print('Data padding: rightside left......')
-    col, row = np.int(len(data_x) * mixratio), len(data_x[0]) / ch
+    col, size = np.int(len(data_x) * mixratio), len(data_x[0]) / ch
 
     rl = data_x.copy()
-    for i in range(0, ch):
-        r = data_x[i * row:(i + 1) * row]
-        rl[i * row:(i+1) * row] = np.fliplr(r)
+    for i in tqdm(range(0, ch)):
+        r = data_x[i * size:(i + 1) * size]
+        rl[i * row:(i+1) * size] = np.fliplr(r)
     rl_x = np.append(data_x, rl[0:col], axis=0)
     rl_y = np.append(data_y, data_y[0:col], axis=0)
     return rl_x, rl_y
+
+
+def crop_data(data_x, data_y, imagesize=32, insize=24, stride=4, ch=3):
+    print('Data cropping: images x 3 x 3......')
+    ratio = (imagesize - insize) / stride + 1
+    imagemat, labelvec = data_x, data_y
+    nimage = len(imagemat)
+    imagemat = np.transpose(np.reshape(imagemat, (nimage, imagesize, imagesize, ch)), (0, 3, 1, 2))
+
+    cropped_x = np.zeros([nimage * ratio ** 2, insize ** 2 * ch])
+    cropped_y = np.zeros(nimage * ratio ** 2)
+    for i in tqdm(range(0, nimage)):
+        for j in range(0, ratio):
+            xind = j * stride
+            for k in range(0, ratio):
+                yind = k * stride
+                cropped_x[i + j * k] = np.reshape(np.transpose(imagemat[i, :, xind:xind + insize, yind:yind + insize],
+                                                               (1, 2, 0)), (1, insize ** 2 * ch))
+        cropped_y[i * ratio ** 2: (i + 1) * ratio ** 2] = np.ones(ratio ** 2).astype(np.int32) * labelvec[i]
+
+    data_x = cropped_x.astype(np.float32)
+    data_y = np.array(cropped_y, dtype=np.int32)
+    return data_x, data_y
 
 
 def process_data(augmentation=2):
@@ -51,11 +76,11 @@ def process_data(augmentation=2):
     cifar['train']['x'], m, sd = normalize(cifar['train']['x'])
     cifar['test']['x'], m, sd = normalize(cifar['test']['x'], M=m, Sd=sd)
     if augmentation > 0 and augmentation <= 1.0:
-        cifar['train']['x'], cifar['train']['y'] =  pad_rightleft(cifar['train']['x'], cifar['train']['y'],
-                                                                  mixratio=augmentation)
+        cifar['train']['x'], cifar['train']['y'] = pad_rightleft(cifar['train']['x'], cifar['train']['y'],
+                                                                 mixratio=augmentation)
     else:
-        cifar['train']['x'], cifar['train']['y'] =  pad_addnoise(cifar['train']['x'], cifar['train']['y'],
-                                                                 mixratio=augmentation - 1.0)
+        cifar['train']['x'], cifar['train']['y'] = pad_addnoise(cifar['train']['x'], cifar['train']['y'],
+                                                                mixratio=augmentation - 1.0)
 #    data.save_pkl(cifar, savename='cifar_processed.pkl')
     return cifar
 
@@ -67,7 +92,7 @@ def load_processed_data():
     else:
         with open('cifar_processed.pkl', 'rb') as cifar_pickle:
             data = six.moves.cPickle.load(cifar_pickle)
-        return data
+    return data
 
 
 def load_data():
