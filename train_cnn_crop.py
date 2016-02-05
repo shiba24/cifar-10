@@ -70,8 +70,8 @@ assert N_test % batchsize == 0
 
 # Prepare Convolution NN model
 if args.net == 'alexbn':
-    import cnn
-    model = cnn.CifarCNN_bn_crop()
+    import model_cnn
+    model = model_cnn.CifarCNN_bn_crop()
 
 
 # GPU settings

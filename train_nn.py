@@ -20,7 +20,7 @@ from chainer import serializers
 import time
 import datahandler as dh
 
-import nn
+import model_nn
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
@@ -60,14 +60,14 @@ n_inputs = cifar['ndim']
 n_units = 5000
 n_outputs = len(cifar['labels'])
 if args.net == 'simple':
-    model = L.Classifier(nn.cifarMLP(n_inputs, n_units, n_outputs))
+    model = L.Classifier(model_nn.cifarMLP(n_inputs, n_units, n_outputs))
     if args.gpu >= 0:
         cuda.get_device(args.gpu).use()
         model.to_gpu()
     xp = np if args.gpu < 0 else cuda.cupy
 elif args.net == 'parallel':
     cuda.check_cuda_available()
-    model = L.Classifier(nn.cifarMLPParallel(n_inputs, n_units, n_outputs))
+    model = L.Classifier(model_nn.cifarMLPParallel(n_inputs, n_units, n_outputs))
     xp = cuda.cupy
 
 # Setup optimizer

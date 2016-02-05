@@ -67,14 +67,11 @@ assert N_test % batchsize == 0
 
 # Prepare Convolution NN model
 if args.net == 'alex':
-    import cnn
-    model = cnn.CifarCNN_2()
+    import model_cnn
+    model = model_cnn.CifarCNN_2()
 elif args.net == 'alexbn':
-    import cnn
-    model = cnn.CifarCNN_bn()
-elif args.net == 'googlenet':
-    import cnn_googlenet
-    model = cnn_googlenet.GoogLeNet()
+    import model_cnn
+    model = model_cnn.CifarCNN_bn()
 
 # GPU settings
 if args.gpu >= 0:
