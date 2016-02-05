@@ -22,9 +22,9 @@ $ python data.py
 
 ### Training
 
-Training can be done in various algorithms (optimizer = {Adam, AdaGrad, SGD}, with/without batch-normalization, dropout rate, different data augumentation methods) and neural architectures {Fully-connected neural network, several Convolutional neural networks}.
+  Training can be done in various algorithms (optimizer = {Adam, AdaGrad, SGD}, with/without batch-normalization, dropout rate, different data augumentation methods) and neural architectures {Fully-connected neural network, several Convolutional neural networks}.
 
-In either case, if you use GPU, add option ```-g 0``` or ```--gpu 0```.  If you want to export result figures, ```-p on``` or ```--plot on```, write log, ```-l on``` or ```--log on```, and save models ```-s on``` or ```--save on```.
+  In either case, if you use GPU, add option ```-g 0``` or ```--gpu 0```.  If you want to export result figures, ```-p on``` or ```--plot on```, write log, ```-l on``` or ```--log on```, and save models ```-s on``` or ```--save on```.
 
 #### Simple neural network
 ```
