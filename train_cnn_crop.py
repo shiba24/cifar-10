@@ -126,9 +126,8 @@ def calcNN(model, data, optimizer, mean_loss, ac, N, batchsize):
             sum_loss / N, sum_accuracy / N))
         mean_loss.append(sum_loss / N)
         ac.append(sum_accuracy / N)
-    #    if args.optimizer == 'sgd' and epoch > 2:
-    #        if train_mean_loss[-2:-1] < 0.02:
-    #            optimizer.lr = 0.005
+        if len(mean_loss) > 1 and mean_loss[-2:-1] < 0.02:
+            optimizer.lr = optimizer.lr / 2.0
     else:
         for i in tqdm(six.moves.range(0, N, batchsize)):
             val_x_batch = np.reshape(data['test']['x'][i:i + batchsize],
@@ -137,6 +136,10 @@ def calcNN(model, data, optimizer, mean_loss, ac, N, batchsize):
 
             x = chainer.Variable(xp.asarray(val_x_batch), volatile='on')
             t = chainer.Variable(xp.asarray(val_y_batch), volatile='on')
+
+#            h = model(x, t, predict=True)
+#            loss = chainer.functions.softmax_cross_entropy(h, t)
+#            accuracy = chainer.functions.accuracy
 
             loss = model(x, t)
             sum_loss += float(loss.data) * len(t.data)

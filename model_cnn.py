@@ -135,7 +135,7 @@ class CifarCNN_bn_crop(chainer.Chain):
             )
         self.train = True
 
-    def __call__(self, x, t, parallel=False):
+    def __call__(self, x, t, predict=False):
         h = self.bn1(self.conv1(x), test=not self.train)
         h = F.max_pooling_2d(F.relu(h), 2, stride=2)
         h = self.bn2(self.conv2(h), test=not self.train)
@@ -148,7 +148,7 @@ class CifarCNN_bn_crop(chainer.Chain):
 
         self.loss = F.softmax_cross_entropy(h, t)
         self.accuracy = F.accuracy(h, t)
-        if parallel:
+        if predict:
             return h
         else:
             return self.loss

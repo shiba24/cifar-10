@@ -73,12 +73,14 @@ elif args.net == 'alexbn':
     import model_cnn
     model = model_cnn.CifarCNN_bn()
 
+
 # GPU settings
 if args.gpu >= 0:
     xp = cuda.cupy
     cuda.get_device(args.gpu).use()
     model.to_gpu()
 else: xp = np
+
 
 # Setup optimizer
 if args.optimizer == 'adam':
@@ -143,6 +145,7 @@ for epoch in six.moves.range(1, n_epoch + 1):
         x = chainer.Variable(xp.asarray(val_x_batch), volatile='on')
         t = chainer.Variable(xp.asarray(val_y_batch), volatile='on')
         loss = model(x, t)
+
         sum_loss += float(loss.data) * len(t.data)
         sum_accuracy += float(model.accuracy.data) * len(t.data)
 
