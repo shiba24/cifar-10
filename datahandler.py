@@ -38,11 +38,13 @@ def pad_rightleft(data_x, data_y, mixratio=1.0, ch=3):
     """ Data padding: rightside left """
     print('Data padding: rightside left......')
     col, size = np.int(len(data_x) * mixratio), len(data_x[0]) / ch
+    height, width = 32, 32
 
     rl = data_x.copy()
     for i in tqdm(range(0, ch)):
-        r = data_x[i * size:(i + 1) * size]
-        rl[i * row:(i+1) * size] = np.fliplr(r)
+        for j in range(0, height):
+            r = data_x[:, i * size + j * height:i * size + j * height + width]
+            rl[:, i * size + j * height:i * size + j * height + width] = np.fliplr(r)
     rl_x = np.append(data_x, rl[0:col], axis=0)
     rl_y = np.append(data_y, data_y[0:col], axis=0)
     return rl_x, rl_y
@@ -53,17 +55,19 @@ def crop_data(data_x, data_y, imagesize=32, insize=24, stride=4, ch=3):
     ratio = (imagesize - insize) / stride + 1
     imagemat, labelvec = data_x, data_y
     nimage = len(imagemat)
-    imagemat = np.transpose(np.reshape(imagemat, (nimage, imagesize, imagesize, ch)), (0, 3, 1, 2))
 
     cropped_x = np.zeros([nimage * ratio ** 2, insize ** 2 * ch])
     cropped_y = np.zeros(nimage * ratio ** 2)
     for i in tqdm(range(0, nimage)):
-        for j in range(0, ratio):
-            xind = j * stride
-            for k in range(0, ratio):
-                yind = k * stride
-                cropped_x[i + j * k] = np.reshape(np.transpose(imagemat[i, :, xind:xind + insize, yind:yind + insize],
-                                                               (1, 2, 0)), (1, insize ** 2 * ch))
+        for c in range(0,ch):
+            imagemat = data_x[i][c * imagesize ** 2:(c + 1) * imagesize ** 2]
+            for j in range(0, ratio):
+                xind = j * stride
+                for k in range(0, ratio):
+                    yind = k * stride
+                    cropped_x[i * ratio**2 + j * ratio + k, c * insize ** 2:(c + 1) * insize ** 2] = np.reshape(
+                        np.reshape(imagemat, (imagesize, imagesize))[yind:yind + insize, xind:xind + insize],
+                        (1, insize ** 2))
         cropped_y[i * ratio ** 2: (i + 1) * ratio ** 2] = np.ones(ratio ** 2).astype(np.int32) * labelvec[i]
 
     data_x = cropped_x.astype(np.float32)
@@ -75,10 +79,10 @@ def process_data(augmentation=2):
     cifar = load_data()
     cifar['train']['x'], m, sd = normalize(cifar['train']['x'])
     cifar['test']['x'], m, sd = normalize(cifar['test']['x'], M=m, Sd=sd)
-    if augmentation > 0 and augmentation <= 1.0:
+    if augmentation > 0:
         cifar['train']['x'], cifar['train']['y'] = pad_rightleft(cifar['train']['x'], cifar['train']['y'],
                                                                  mixratio=augmentation)
-    else:
+    if augmentation > 1.0:
         cifar['train']['x'], cifar['train']['y'] = pad_addnoise(cifar['train']['x'], cifar['train']['y'],
                                                                 mixratio=augmentation - 1.0)
 #    data.save_pkl(cifar, savename='cifar_processed.pkl')
@@ -121,4 +125,12 @@ def load_processed_data():
         with open('cifar_processed.pkl', 'rb') as cifar_pickle:
             data = six.moves.cPickle.load(cifar_pickle)
         return data
+
+    imagemat = np.reshape(imagemat, (nimage, imagesize, imagesize, ch))
+
+#    imagemat = np.transpose(np.reshape(imagemat, (nimage, imagesize, imagesize, ch)), (0, 3, 1, 2))
+                    cropped_x[i + j * ratio + k, c * insize ** 2:(c + 1) * insize ** 2] = np.reshape(
+                        imagemat[xind:xind + insize, yind:yind + insize],
+                                                      (1, insize ** 2 * ch))
+
 """

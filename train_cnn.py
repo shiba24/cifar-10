@@ -23,7 +23,7 @@ import datahandler as dh
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
-parser.add_argument('--augmentation', '-a', default=1.5, type=float,
+parser.add_argument('--augmentation', '-a', default=1.0, type=float,
                     help='The amount of data augmentation')
 parser.add_argument('--batchsize', '-b', default=100, type=int,
                     help='Batch size of training')

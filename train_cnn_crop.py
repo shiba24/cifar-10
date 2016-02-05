@@ -23,7 +23,7 @@ import datahandler as dh
 
 
 parser = argparse.ArgumentParser(description='Example: cifar-10')
-parser.add_argument('--augmentation', '-a', default=1.5, type=float,
+parser.add_argument('--augmentation', '-a', default=1.0, type=float,
                     help='The amount of data augmentation')
 parser.add_argument('--batchsize', '-b', default=100, type=int,
                     help='Batch size of training')
@@ -58,6 +58,7 @@ else: cifar = dh.load_data()
 
 # Cropping => insize = 24
 cifar['train']['x'], cifar['train']['y'] = dh.crop_data(cifar['train']['x'], cifar['train']['y'])
+cifar['test']['x'], cifar['test']['y'] = dh.crop_data(cifar['test']['x'], cifar['test']['y'])
 
 N, N_test = len(cifar['train']['x']), len(cifar['test']['x'])
 print(N, N_test)
@@ -129,7 +130,7 @@ def calcNN(model, data, optimizer, mean_loss, ac, N, batchsize):
     #        if train_mean_loss[-2:-1] < 0.02:
     #            optimizer.lr = 0.005
     else:
-        for i in six.moves.range(0, N, batchsize):
+        for i in tqdm(six.moves.range(0, N, batchsize)):
             val_x_batch = np.reshape(data['test']['x'][i:i + batchsize],
                                      (batchsize, 3, model.insize, model.insize))
             val_y_batch = data['test']['y'][i:i + batchsize]

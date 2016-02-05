@@ -108,7 +108,7 @@ class CifarCNN_bn(chainer.Chain):
         h = F.max_pooling_2d(F.relu(h), 2, stride=2)
         h = F.dropout(F.relu(self.conv3(h)), ratio=0.6, train=self.train)
         h = F.max_pooling_2d(F.relu(self.conv4(h)), 2, stride=2)
-        h = F.average_pooling_2d(F.relu(self.conv5(h)), 2, stride=2, cover_all=True)
+        h = F.average_pooling_2d(F.relu(self.conv5(h)), 2, stride=2)
         h = F.dropout(F.relu(self.fc6(h)), ratio=0.6, train=self.train)
         h = self.fc7(h)
 
